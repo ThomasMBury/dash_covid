@@ -12,6 +12,9 @@ import os
 import numpy as np
 import pandas as pd
 
+import base64
+
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -31,11 +34,14 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_scripts = ['https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML']
 
 
-
 app = dash.Dash(__name__, 
 				external_stylesheets=external_stylesheets,
                 external_scripts = external_scripts,
 				)
+
+mathjax = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'
+app.scripts.append_script({ 'external_url' : mathjax })
+
 
 print('Launching dash')
 server = app.server
@@ -81,7 +87,13 @@ phi0_marks = {x:str(round(x,2)) for x in np.arange(0,1.1,0.2)}
 
 nmax_min = 0
 nmax_max = 100
-nmax_marks = {x:str(round(x,2)) for x in np.arange(0,201,50)}
+nmax_marks = {float(x):str(round(x,2)) for x in np.arange(0,100,10.0)}
+
+
+# PDF image of text
+image_filename = 'diff_eqn.png' # replace with your own image
+encoded_image = base64.b64encode(open(image_filename, 'rb').read())
+
 
 
 model_text = \
@@ -117,6 +129,10 @@ app.layout = html.Div([
                         'color':'black'}
                 ),
         
+        
+        # html.Img(src='data:image/png;base64,{}'.format(encoded_image)),
+        
+        
         # Model description
         html.P(model_text,
                 style={'fontSize':15,
@@ -148,8 +164,8 @@ app.layout = html.Div([
 		dcc.Slider(id='nmax_slider',
  				   min=nmax_min, 
  				   max=nmax_max, 
- 				   step=1, 
- 				   # marks=nmax_marks,
+ 				   step=1.0, 
+ 				   marks=nmax_marks,
  				   value=nmax
 		),
         
