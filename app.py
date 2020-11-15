@@ -34,13 +34,11 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_scripts = ['https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML']
 
 
+
 app = dash.Dash(__name__, 
 				external_stylesheets=external_stylesheets,
                 external_scripts = external_scripts,
 				)
-
-mathjax = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'
-app.scripts.append_script({ 'external_url' : mathjax })
 
 
 print('Launching dash')
@@ -107,6 +105,15 @@ $$ x_{t+1} =
 $$
 '''
 
+model_text_2_line1 = \
+'''
+x_{t+1} = (3/2)x_t for 0 <= x_t < 2/3
+'''
+model_text_2_line2 = \
+'''
+x_{t+1} = (3/2)x_t - 1 for 2/3<= x_t < 1
+'''
+
 
 app.layout = html.Div([
       
@@ -129,16 +136,20 @@ app.layout = html.Div([
                         'color':'black'}
                 ),
         
-        
-        # html.Img(src='data:image/png;base64,{}'.format(encoded_image)),
-        
+
         
         # Model description
-        html.P(model_text,
+        html.P(model_text_2_line1,
                 style={'fontSize':15,
                       'color':'black',
                       # 'textAlign':'left',
                       }),
+        html.Br(),
+        html.P(model_text_2_line2,
+                style={'fontSize':15,
+                      'color':'black',
+                      # 'textAlign':'left',
+                      }),        
          
         html.Br(),
         
