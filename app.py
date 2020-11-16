@@ -84,8 +84,8 @@ phi0_max = 1
 phi0_marks = {x:str(round(x,2)) for x in np.arange(0,1.1,0.2)}
 
 nmax_min = 0
-nmax_max = 100
-nmax_marks = {float(x):str(round(x,2)) for x in np.arange(0,100,10.0)}
+nmax_max = 1000
+nmax_marks = {float(x):str(round(x,2)) for x in np.arange(0,nmax_max,100)}
 
 
 # PDF image of text
