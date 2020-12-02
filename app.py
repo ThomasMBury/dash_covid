@@ -3,25 +3,20 @@
 """
 Created on 14 Nov 2020
 
-Dash app for cobweb plot
+Dash app for covid analysis
 
 @author: tbury
 """
 
-import os
 import numpy as np
 import pandas as pd
 
-import base64
-
+import plotly.express as px
 
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
-
-
-from app_functions import phase_map, generate_phase_trajectory, make_phase_map
 
 
 #-------------
@@ -34,7 +29,6 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 external_scripts = ['https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML']
 
 
-
 app = dash.Dash(__name__, 
 				external_stylesheets=external_stylesheets,
                 external_scripts = external_scripts,
@@ -45,27 +39,84 @@ print('Launching dash')
 server = app.server
 
 
+
+# Import covid data
+df_covid = pd.read_csv('data/df_covid.csv')
+list_countries = df_covid['location'].unique()
+
+#------------
+# functions
+#-------------
+
+
+def make_traj_plot(countries, var, res):
+    '''
+    Make plot of covid trajectories
+
+    Parameters
+    ----------
+    countries : list of strings
+        List of countries to plot
+    var : string
+        One of ['New cases','New deaths']
+    res : string
+        One of ['Daily','7 day average']
+
+    Returns
+    -------
+    Plotly fig.
+
+    '''
+
+    # Based on var and res, which column are we plotting
+    if var=='New cases':
+        if res=='Daily':
+            col_plot = 'new_cases'
+        else:
+            col_plot = 'new_cases_7dayAv'
+            
+    if var=='New deaths':
+        if res=='Daily':
+            col_plot = 'new_deaths'
+        else:
+            col_plot = 'new_deaths_7dayAv'
+   
+    # Filter df to only include list of countries provided
+    df_plot = df_covid[df_covid['location'].isin(countries)]
+
+    # If df_plot is empty, make empty plot
+    if len(df_plot)==0:
+        fig = px.line(df_plot,
+                      x='date',
+                      y=col_plot)
+
+    else:
+        fig = px.line(df_plot,
+                      x='date',
+                      y=col_plot,
+                      color='location')
+    
+    fig.update_xaxes(title='Date')
+    fig.update_yaxes(title=var)
+    fig.update_layout(legend_title='Country')
+
+    return fig
+    
+
+
 #-----------------
 # Generate figures
 #-------------------
 
 
 # Defualt values for simulation
-phi0 = 0.2 # initial condition
-nmax = 2 # number of iterations
-
-# Create phase map function (might want to add extra parameters here)
-def phase_map_specific(phi):
-    return phase_map(phi)
-
-# Generate phi trajectory
-phi_traj = generate_phase_trajectory(phase_map_specific, nmax, phi0)
+def_countries = ['United States']
+def_var = 'New cases'
+def_res = 'Daily'
 
 
-# Make figure of phase map and stable trajectory
-fig_phase_map = make_phase_map(phase_map_specific,
-                               phi_traj,
-                               )
+# Make line plot of covid trajectories
+fig_traj = make_traj_plot(def_countries, def_var, def_res)
 
 
 #--------------------
@@ -77,108 +128,66 @@ fig_phase_map = make_phase_map(phase_map_specific,
 size_slider_text = '15px'
 size_title = '30px'
 
-
-# Parameter bounds
-phi0_min = 0
-phi0_max = 1
-phi0_marks = {x:str(round(x,2)) for x in np.arange(0,1.1,0.2)}
-
-nmax_min = 0
-nmax_max = 1000
-nmax_marks = {float(x):str(round(x,2)) for x in np.arange(0,nmax_max,100)}
-
-
-# PDF image of text
-image_filename = 'diff_eqn.png' # replace with your own image
-encoded_image = base64.b64encode(open(image_filename, 'rb').read())
-
-
-
-model_text = \
-'''
-Phase map:
-$$ x_{t+1} = 
-\\begin{cases}
-\\frac{3}{2} x_t & 0 \leq x_t < \\frac{2}{3},\\\\
-\\frac{3}{2} x_t - 1 & \\frac{2}{3} \leq x_t < 1
-\\end{cases}
-$$
-'''
-
-model_text_2_line1 = \
-'''
-x_{t+1} = (3/2)x_t for 0 <= x_t < 2/3
-'''
-model_text_2_line2 = \
-'''
-x_{t+1} = (3/2)x_t - 1 for 2/3 <= x_t < 1
-'''
+# Dropdown box options
+opts_countries = [{'label':x, 'value':x} for x in list_countries]
+opts_var = [{'label':x, 'value':x} for x in ['New cases','New deaths']]
+opts_res = [{'label':x, 'value':x} for x in ['Daily','7 day average']]
 
 
 app.layout = html.Div([
       
-    
-    # html.Div(
-    #     html.H1('Cobweb plot',
-    #              	style={'textAlign':'center',
-    #                     'fontSize':size_title,
-    #                     'color':'black'}
-    #             )
-    #     ),
+    html.Div(
+        html.H1('Analysis of Covid-19 trajectories',
+                 style={'textAlign':'center',
+                        'fontSize':size_title,
+                        'color':'black'}
+                )
+        ),
     
     # Left half of app
  	html.Div([
+      
+        # Dropdown box for countries
+        html.Label('Country',
+                   style={'fontSize':14}
+        ),         
+        dcc.Dropdown(
+            id='dropdown_countries',
+            options=opts_countries,
+            value=def_countries,
+            multi=True,
+            optionHeight=20,
+        ),
         
-        
-        html.H1('Cobweb plot',
-                 style={'textAlign':'left',
-                        'fontSize':size_title,
-                        'color':'black'}
-                ),
-        
+        html.Br(),
+      
+        # Dropdown box for variable to plot
+        html.Label('Variable',
+                   style={'fontSize':14},
+        ),         
+        dcc.Dropdown(
+            id='dropdown_var',
+            options=opts_var,
+            value=def_var,
+            optionHeight=20,
+            clearable=False,
+        ),
+         
+        html.Br(),
 
+
+        # Dropdown box for temporal resolution
+        html.Label('Resolution',
+                   style={'fontSize':14},
+        ),         
+        dcc.Dropdown(
+            id='dropdown_res',
+            options=opts_res,
+            value=def_res,
+            optionHeight=20,
+            clearable=False,
+        )     
         
-        # Model description
-        html.P(model_text_2_line1,
-                style={'fontSize':15,
-                      'color':'black',
-                      # 'textAlign':'left',
-                      }),
-        html.Br(),
-        html.P(model_text_2_line2,
-                style={'fontSize':15,
-                      'color':'black',
-                      # 'textAlign':'left',
-                      }),        
-         
-        html.Br(),
-        
-        # Slider for phi0
-		html.Label('Initial condition = {}'.format(phi0),
- 				   id='phi0_slider_text',
- 				   style={'fontSize':size_slider_text}),  
- 				   
-		dcc.Slider(id='phi0_slider',
- 				   min=phi0_min, 
- 				   max=phi0_max, 
- 				   step=0.001,
- 				   marks=phi0_marks,
- 				   value=phi0
-		),          
-         
-         
-		# Slider for nmax
-		html.Label('Number of iterations = {}'.format(nmax),
- 				   id='nmax_slider_text',
- 				   style={'fontSize':size_slider_text}),  
- 				   
-		dcc.Slider(id='nmax_slider',
- 				   min=nmax_min, 
- 				   max=nmax_max, 
- 				   step=1.0, 
- 				   marks=nmax_marks,
- 				   value=nmax
-		),
         
         
         ],       
@@ -188,16 +197,16 @@ app.layout = html.Div([
 			   'padding-left':'5%',
 			   'padding-right':'5%',
 			   'padding-bottom':'0px',
-               'padding-top':'40px',
+                'padding-top':'40px',
 			   'vertical-align': 'middle',
 			   'display':'inline-block'},
         ),
 
 
- 	# Phase map figure
+ 	# Trajectory figure
  	html.Div(
-		[dcc.Graph(id='phase_plot',
- 				   figure = fig_phase_map,
+		[dcc.Graph(id='fig_traj',
+ 				   figure = fig_traj,
  				   # config={'displayModeBar': False},
  				   ),
  		 ],
@@ -210,61 +219,31 @@ app.layout = html.Div([
 			   'display':'inline-block'},
  	),
 
-
 ])
-        
 
-# #–-------------------
-# # Callback functions
-# #–--------------------
 
-  
-# Update text for sliders             
-@app.callback(
-        [Output('phi0_slider_text','children'),
-         Output('nmax_slider_text','children'),
-          ],
-        [
-          Input('phi0_slider','value'),
-          Input('nmax_slider','value'),
-          ]
-)
 
-def update_slider_text(phi0,nmax):
-    
-    # Slider text update
-    text_phi0 = 'Initial condition = {}'.format(phi0)
-    text_nmax = 'Number of iterations = {}'.format(nmax)      
-
-    return text_phi0, text_nmax
-            
-         
+#–-------------------
+# Callback functions
+#–--------------------
 
 # Update figures
 @app.callback(
-            Output('phase_plot','figure'),
+            Output('fig_traj','figure'),
             [
-              Input('phi0_slider','value'),
-              Input('nmax_slider','value'),           
+              Input('dropdown_countries','value'),
+              Input('dropdown_var','value'),    
+              Input('dropdown_res','value'),           
             ],
             )
 
-def update_figs(phi0, nmax):
+def update_figs(countries, var, res):
     
-    # Phase map
-    def phase_map_specific(phi):
-        return phase_map(phi) 
-    
-    # Generate phi trajectory
-    phi_traj = generate_phase_trajectory(phase_map_specific, nmax, phi0)
-    
-        
-    # Make figure of phase map and stable trajectory
-    fig_phase_map = make_phase_map(phase_map_specific,
-                                   phi_traj,
-                                   )
+    # Make figure of trajectories
+    fig_traj = make_traj_plot(countries, var, res)
 
-    return fig_phase_map
+    return fig_traj
+
 
 
 #-----------------
