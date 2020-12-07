@@ -67,7 +67,7 @@ def make_grid_plot(countries, res, scale):
     res : string
         One of ['Daily','7 day average']
     scale: string
-        One of ['Raw','Per million habitants']
+        One of ['Raw','Per million habitants','Max value']
 
     Returns
     -------
@@ -131,7 +131,12 @@ def make_grid_plot(countries, res, scale):
             y3 = df_plot[I_col]*1e6/population
             y4 = df_plot[R_col]
             
-        
+            
+        if scale=='Max value':
+            y1 = df_plot[cases_col]/df_plot[cases_col].max()
+            y2 = df_plot[deaths_col]/df_plot[deaths_col].max()
+            y3 = df_plot[I_col]/df_plot[I_col].max()
+            y4 = df_plot[R_col]
         
         # Plot new cases
         fig.add_trace(
@@ -329,7 +334,7 @@ size_title = '30px'
 opts_countries = [{'label':x, 'value':x} for x in list_countries]
 opts_var = [{'label':x, 'value':x} for x in ['New cases','New deaths']]
 opts_res = [{'label':x, 'value':x} for x in ['Daily','7 day average']]
-opts_scale = [{'label':x, 'value':x} for x in ['Raw','Per million habitants']]
+opts_scale = [{'label':x, 'value':x} for x in ['Raw','Per million habitants','Max value']]
 
 
 app.layout = html.Div([
