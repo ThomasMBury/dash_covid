@@ -55,7 +55,7 @@ list_countries = df_covid['location'].unique()
 
 
 
-def make_grid_plot(countries, res):
+def make_grid_plot(countries, res, scale):
     '''
     Make grid plot showing covid trajectories and
     derived metrics.
@@ -66,6 +66,8 @@ def make_grid_plot(countries, res):
         List of countries to plot
     res : string
         One of ['Daily','7 day average']
+    scale: string
+        One of ['Raw','Per million habitants']
 
     Returns
     -------
@@ -105,16 +107,36 @@ def make_grid_plot(countries, res):
         R_col = 'R_7dayAv'
 
 
+
     
     # Loop through each country
     count=0
     for country in countries:
+        
+        # Get country-specific data
         df_plot = df_covid[df_covid['location']==country]
+        population = df_plot['population']
+        
+        # Assign plot values
+        x = df_plot['date']
+        if scale=='Raw':
+            y1 = df_plot[cases_col]
+            y2 = df_plot[deaths_col]
+            y3 = df_plot[I_col]
+            y4 = df_plot[R_col]
+        
+        if scale=='Per million habitants':
+            y1 = df_plot[cases_col]*1e6/population
+            y2 = df_plot[deaths_col]*1e6/population
+            y3 = df_plot[I_col]*1e6/population
+            y4 = df_plot[R_col]
+            
+        
         
         # Plot new cases
         fig.add_trace(
-            go.Scatter(x=df_plot['date'],
-                       y=df_plot[cases_col],
+            go.Scatter(x=x,
+                       y=y1,
                        mode='lines',
                        name=country,
                        legendgroup=country,
@@ -125,8 +147,8 @@ def make_grid_plot(countries, res):
         
         # Plot new deaths
         fig.add_trace(
-            go.Scatter(x=df_plot['date'],
-                       y=df_plot[deaths_col],
+            go.Scatter(x=x,
+                       y=y2,
                        mode='lines',
                        name=country,
                        legendgroup=country,
@@ -138,8 +160,8 @@ def make_grid_plot(countries, res):
         
         # Plot total infected
         fig.add_trace(
-            go.Scatter(x=df_plot['date'],
-                       y=df_plot[I_col],
+            go.Scatter(x=x,
+                       y=y3,
                        mode='lines',
                        name=country,
                        legendgroup=country,
@@ -151,8 +173,8 @@ def make_grid_plot(countries, res):
         
         # Plot contact ratio
         fig.add_trace(
-            go.Scatter(x=df_plot['date'],
-                       y=df_plot[R_col],
+            go.Scatter(x=x,
+                       y=y4,
                        mode='lines',
                        name=country,
                        legendgroup=country,
@@ -178,10 +200,6 @@ def make_grid_plot(countries, res):
     
     return fig
 
-
-
-fig = make_grid_plot(['United States','United Kingdom'],'Daily')
-fig.write_html('temp.html')
 
 
 
@@ -291,10 +309,11 @@ def make_r_plot(countries):
 # Defualt values for simulation
 def_countries = ['United States']
 def_res = 'Daily'
+def_scale = 'Raw'
 
 
 # Make grid plot
-fig_grid = make_grid_plot(def_countries, def_res)
+fig_grid = make_grid_plot(def_countries, def_res, def_scale)
 
 
 #--------------------
@@ -310,6 +329,7 @@ size_title = '30px'
 opts_countries = [{'label':x, 'value':x} for x in list_countries]
 opts_var = [{'label':x, 'value':x} for x in ['New cases','New deaths']]
 opts_res = [{'label':x, 'value':x} for x in ['Daily','7 day average']]
+opts_scale = [{'label':x, 'value':x} for x in ['Raw','Per million habitants']]
 
 
 app.layout = html.Div([
@@ -352,7 +372,24 @@ app.layout = html.Div([
             value=def_res,
             optionHeight=20,
             clearable=False,
-        )     
+        ),     
+        
+        
+        html.Br(),
+        
+        
+        # Dropdown box for scale
+        html.Label('Scale',
+                   style={'fontSize':14},
+        ),         
+        dcc.Dropdown(
+            id='dropdown_scale',
+            options=opts_scale,
+            value=def_scale,
+            optionHeight=20,
+            clearable=False,
+        )             
+        
         
         
         
@@ -402,14 +439,15 @@ app.layout = html.Div([
             
             [
               Input('dropdown_countries','value'),
-              Input('dropdown_res','value'),           
+              Input('dropdown_res','value'),
+              Input('dropdown_scale','value'),
             ],
             )
 
-def update_figs(countries, res):
+def update_figs(countries, res, scale):
     
     # Make figure of trajectories
-    fig_grid = make_grid_plot(countries, res)
+    fig_grid = make_grid_plot(countries, res, scale)
 
     return fig_grid
 
