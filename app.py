@@ -15,7 +15,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-
+from datetime import date
 
 import dash
 import dash_core_components as dcc
@@ -59,12 +59,16 @@ def_countries = ['United States']
 def_res = 'Daily'
 def_scale = 'Raw'
 def_ndays = 30
+def_delay = 0
+def_start_date = '2020-03-01'
 
 # Make grid plot
 fig_grid = make_grid_plot(df_covid, def_countries, def_res, def_scale)
 
 # Make r vs deaths scatter plot
-fig_scatter = make_r_d_scatter(df_covid, def_countries, def_ndays)
+fig_scatter = make_r_d_scatter(df_covid, def_countries, 
+                               n_days=def_ndays, 
+                               scale=def_scale)
 
 
 #--------------------
@@ -169,7 +173,6 @@ app.layout = html.Div([
 			   'display':'inline-block'},
  	),
      
-    # Slider for scatter
     html.Div(
          [
      
@@ -188,8 +191,38 @@ app.layout = html.Div([
             step=1,
          ),
          
+         html.Br(),
+
+         # Slider for delay
+		 html.Label('Delay = {}'.format(def_delay),
+ 				   id='slider_delay_text',
+ 				   style={'fontSize':14}),    
          
-         ],
+         dcc.Slider(
+            id='slider_delay',
+            value=def_delay,
+            min=0,
+            max=20,
+            step=1,
+         ),         
+         
+         html.Br(),
+
+
+         # Start time date picker
+		 html.Label('Start date = {}'.format(def_start_date),
+ 				   id='date_picker_text',
+ 				   style={'fontSize':14}),
+         
+         dcc.DatePickerSingle(
+              id='date_picker',
+              min_date_allowed = date(2020, 1, 1),
+              max_date_allowed = date(2021, 1, 1),
+              initial_visible_month = date(2020, 1, 1),
+              date = date(2020, 3, 1)
+          ),
+         
+          ],
          
 		style={'width':'25%',
 			   'height':'400px',
@@ -235,6 +268,8 @@ app.layout = html.Div([
             Output('fig_grid','figure'),
             Output('fig_scatter','figure'),
             Output('slider_ndays_text','children'),
+            Output('slider_delay_text','children'),
+            Output('date_picker_text','children'),
             ],
             
             [
@@ -242,21 +277,34 @@ app.layout = html.Div([
               Input('dropdown_res','value'),
               Input('dropdown_scale','value'),
               Input('slider_ndays','value'),
+              Input('slider_delay','value'),
+              Input('date_picker','date'),
             ],
             
             )
 
-def update_figs(countries, res, scale, n_days):
+def update_figs(countries, res, scale, n_days, delay, date_value):
     
     # Make figure of trajectories
     fig_grid = make_grid_plot(df_covid, countries, res, scale)
     
+    # Convert start time to string of from y-m-d
+    date_object = date.fromisoformat(date_value)
+    date_string = date_object.strftime('%Y-%m-%d')
+    
     # Make scatter plot
-    fig_scatter = make_r_d_scatter(df_covid, countries, n_days)
+    fig_scatter = make_r_d_scatter(df_covid, countries, 
+                                   n_days=n_days,
+                                   scale=scale,
+                                   delay=delay,
+                                   start_date=date_string)
 
-    slider_text = 'Number of days = {}'.format(n_days)
+    slider_ndays_text = 'Number of days = {}'.format(n_days)
+    slider_delay_text = 'Delay = {}'.format(delay)
+    date_picker_text = 'Start date = {}'.format(date_string)
 
-    return fig_grid, fig_scatter, slider_text
+
+    return fig_grid, fig_scatter, slider_ndays_text, slider_delay_text, date_picker_text
 
 
 

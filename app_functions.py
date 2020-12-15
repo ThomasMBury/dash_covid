@@ -23,8 +23,6 @@ from dash.dependencies import Input, Output
 
 
 
-
-
 cols = [
     '#1f77b4',  # muted blue
     '#ff7f0e',  # safety orange
@@ -39,7 +37,10 @@ cols = [
 ]    
     
 
-def make_r_d_scatter(df_covid, countries, n_days=30, start_date='2020-03-01'):
+def make_r_d_scatter(df_covid, countries, n_days=30,
+                     scale='Raw',
+                     start_date='2020-03-01',
+                     delay=0):
     '''
     Make a scatter plot of r (contact rate) as a funciton of number of new
     deaths in the past n_days.
@@ -52,6 +53,12 @@ def make_r_d_scatter(df_covid, countries, n_days=30, start_date='2020-03-01'):
         list of countries to plot
     n_days: int
         number of days of death count to include
+    scale: string
+        One of ['Raw','Per million habitants','Max value']
+    start_date: string
+        date from which to begin plotting
+    delay: int
+        number of days delay in computing cumulative deaths
 
     Returns
     -------
@@ -71,7 +78,21 @@ def make_r_d_scatter(df_covid, countries, n_days=30, start_date='2020-03-01'):
     # Compute accumulative deaths over previous n_days for each country
     df_plot['new_deaths_acc'] = \
         df_plot.groupby('location')['new_deaths'].rolling(n_days).sum().reset_index(0,drop=True)
-        
+    
+    # Add a delay by shifting new_deaths_acc
+    df_plot['new_deaths_acc_delay'] = df_plot['new_deaths_acc'].shift(delay)
+    
+    
+    # Function to scale data
+    def normalise_deaths(df_sub):
+        if scale=='Per million habitants':
+            df_sub['new_deaths_acc_delay'] = df_sub['new_deaths_acc_delay']*1e6/df_sub['population']
+        if scale=='Max value':
+            df_sub['new_deaths_acc_delay'] = df_sub['new_deaths_acc_delay']/df_sub['new_deaths_acc_delay'].max()
+        return df_sub
+    # Apply function
+    df_plot = df_plot.groupby('location').apply(normalise_deaths)
+    
     # Sort according to list of countries
     df_plot['location'] = df_plot['location'].astype('category')
     df_plot['location'].cat.set_categories(countries, inplace=True)
@@ -80,7 +101,7 @@ def make_r_d_scatter(df_covid, countries, n_days=30, start_date='2020-03-01'):
 
     # Create scatter plot of contact rate vs consecutive deaths
     fig = px.scatter(df_plot[df_plot['date']> start_date],
-                     x='new_deaths_acc',
+                     x='new_deaths_acc_delay',
                      y='reproduction_rate',
                      hover_data=['date'],
                      color='location',
