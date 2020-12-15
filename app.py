@@ -15,7 +15,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from datetime import date
+import datetime
 
 import dash
 import dash_core_components as dcc
@@ -216,10 +216,10 @@ app.layout = html.Div([
          
          dcc.DatePickerSingle(
               id='date_picker',
-              min_date_allowed = date(2020, 1, 1),
-              max_date_allowed = date(2021, 1, 1),
-              initial_visible_month = date(2020, 1, 1),
-              date = date(2020, 3, 1)
+              min_date_allowed = datetime.date(2020, 1, 1),
+              max_date_allowed = datetime.date(2021, 1, 1),
+              initial_visible_month = datetime.date(2020, 1, 1),
+              date = datetime.date(2020, 3, 1)
           ),
          
           ],
@@ -289,7 +289,7 @@ def update_figs(countries, res, scale, n_days, delay, date_value):
     fig_grid = make_grid_plot(df_covid, countries, res, scale)
     
     # Convert start time to string of from y-m-d
-    date_object = date.fromisoformat(date_value)
+    date_object = datetime.date.fromisoformat(date_value)
     date_string = date_object.strftime('%Y-%m-%d')
     
     # Make scatter plot
