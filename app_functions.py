@@ -93,26 +93,60 @@ def make_r_d_scatter(df_covid, countries, n_days=30,
     # Apply function
     df_plot = df_plot.groupby('location').apply(normalise_deaths)
     
+    
     # Sort according to list of countries
     df_plot['location'] = df_plot['location'].astype('category')
     df_plot['location'].cat.set_categories(countries, inplace=True)
-    df_plot.sort_values('location',inplace=True)
+    df_plot.sort_values(['location','date'],inplace=True)
     
+    # Only keep values > start_date
+    df_plot = df_plot[df_plot['date']>start_date]
 
-    # Create scatter plot of contact rate vs consecutive deaths
-    fig = px.scatter(df_plot[df_plot['date']> start_date],
-                     x='new_deaths_acc_delay',
-                     y='reproduction_rate',
-                     hover_data=['date'],
-                     color='location',
-                     color_discrete_sequence=cols,
-                     )
+    # If multiple countries provided, use different colour for each country
+    if len(countries)!=1:
+        # Create scatter plot of contact rate vs consecutive deaths
+        fig = px.scatter(df_plot,
+                         x='new_deaths_acc_delay',
+                         y='reproduction_rate',
+                         hover_data=['date'],
+                         color='location',
+                         color_discrete_sequence=cols,
+                         )
+    
+    # If only 1 country provided, color code time points
+    else:
+        # Make integer values for each date entry
+        date_to_val = df_plot['date'].map(
+            pd.Series(np.arange(len(df_plot)), 
+                      index=df_plot['date'].values).to_dict())
+        
+        tickvals = [30*k for k in range(10)]
+        index_tickvals = [date_to_val.index[tv] for tv in tickvals]
+        ticktext = [str(df_plot['date'][idx]) for idx in index_tickvals]
+        
+        # Create scatter plot of contact rate vs consecutive deaths
+        fig = go.Figure(
+            go.Scatter(
+                x=df_plot['new_deaths_acc_delay'],
+                y=df_plot['reproduction_rate'],
+                mode='markers',
+                marker_color=date_to_val,
+                marker_colorscale='Plasma',
+                marker_showscale=True,
+                marker_size=8,
+                marker_colorbar=dict(tickvals=tickvals, 
+                                     ticktext=ticktext, 
+                                     title_text='date'),
+                         )
+            )
     
     fig.update_xaxes(title='Cumulative deaths over {} days'.format(n_days))
     fig.update_yaxes(title='Contact rate')
         
     
     return fig
+
+
 
 
 
