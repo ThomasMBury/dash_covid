@@ -120,7 +120,7 @@ def make_r_d_scatter(df_covid, countries, n_days=30,
             pd.Series(np.arange(len(df_plot)), 
                       index=df_plot['date'].values).to_dict())
         
-        tickvals = [30*k for k in range(10)]
+        tickvals = [0,int(len(date_to_val)/2),len(date_to_val)-1]
         index_tickvals = [date_to_val.index[tv] for tv in tickvals]
         ticktext = [str(df_plot['date'][idx]) for idx in index_tickvals]
         
