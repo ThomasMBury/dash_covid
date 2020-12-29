@@ -124,6 +124,7 @@ def make_r_d_scatter(df_covid, countries, n_days=30,
         index_tickvals = [date_to_val.index[tv] for tv in tickvals]
         ticktext = [str(df_plot['date'][idx]) for idx in index_tickvals]
         
+        customdata=df_plot['date']
         # Create scatter plot of contact rate vs consecutive deaths
         fig = go.Figure(
             go.Scatter(
@@ -136,8 +137,11 @@ def make_r_d_scatter(df_covid, countries, n_days=30,
                 marker_size=8,
                 marker_colorbar=dict(tickvals=tickvals, 
                                      ticktext=ticktext, 
-                                     title_text='date'),
-                         )
+                                     title_text='date'
+                                     ),
+                customdata=customdata,
+                hovertemplate="Date: %{customdata}<br>x: %{x}<br>y: %{y}",
+                )
             )
     
     fig.update_xaxes(title='Cumulative deaths over {} days'.format(n_days))
@@ -149,6 +153,8 @@ def make_r_d_scatter(df_covid, countries, n_days=30,
 
 
 
+fig = make_r_d_scatter(df_covid, countries=['United Kingdom'])
+fig.write_html('temp.html')
 
 
 
