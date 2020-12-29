@@ -153,8 +153,8 @@ def make_r_d_scatter(df_covid, countries, n_days=30,
 
 
 
-fig = make_r_d_scatter(df_covid, countries=['United Kingdom'])
-fig.write_html('temp.html')
+# fig = make_r_d_scatter(df_covid, countries=['United Kingdom'])
+# fig.write_html('temp.html')
 
 
 
