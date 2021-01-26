@@ -46,7 +46,7 @@ server = app.server
 
 
 # Import covid data
-df_covid = pd.read_csv('data/df_covid2.csv')
+df_covid = pd.read_csv('data/df_covid.csv')
 list_countries = df_covid['location'].unique()
 
 
