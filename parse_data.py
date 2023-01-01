@@ -19,7 +19,6 @@ import scipy.special as sp
 
 
 
-
 def cdf_gamma(x, k, theta):
     '''
     Cumulative distribution function for the gamma distribution
@@ -87,11 +86,11 @@ def compute_I(ar_cases, k_r, theta_r, k_d, theta_d, delta):
 
     '''
 
-    # Compute gamma distribution values for 1000 days into future
+    # Compute gamma distribution values for 1500 days into future
     prob_values = np.array(
         [prob_still_infected(
             t,k_r,theta_r,k_d,theta_d,delta
-            ) for t in np.arange(1000)])
+            ) for t in np.arange(1500)])
     
     # Intialise array for total infections
     ar_I = np.zeros(len(ar_cases))
@@ -181,10 +180,6 @@ df_covid = pd.concat(list_df)
 # Export data
 print('Exporting parsed covid data')
 df_covid.to_csv('data/df_covid.csv')
-
-
-
-
 
 
 
